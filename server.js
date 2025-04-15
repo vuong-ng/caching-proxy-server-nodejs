@@ -2,6 +2,7 @@ import axios from "axios";
 import express from 'express';
 import NodeCache from "node-cache";
 
+// const sharedCache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
 class CachingProxyServer {
     constructor(port, origin) {
         this.port = port;
@@ -11,19 +12,21 @@ class CachingProxyServer {
     }
 
     async handleRequest(req, res) {
-        console.log(`Forwarding request to: ${this.origin}`);
-        const cachedResponse = this.cache.get(this.origin);
+        const url = `${this.origin.replace(/\/+$/, '')}/${req.orignalUrl.replace(/^\/+/, '')}`; //concat the start of this server origin with the url
+        console.log(`Forwarding request to: ${url}`);
+        const cachedResponse = this.cache.get(url);
+
         if (cachedResponse) {
             res.setHeader('X-cache', 'HIT');
             return res.status('200').send(cachedResponse.data);
         }
 
         try {
-            const response = await axios.get(this.origin);
+            const response = await axios.get(url);
             const responseData = response.data;
-            this.cache.set(this.origin, responseData);
+            this.cache.set(url, responseData);
             res.setHeader('X-cache', 'MISS');
-            return res.status('200').send(responseData);
+            res.status(response.status).send(responseData);
         } 
         catch(error) {
             console.error(`Request failed: ${error.response ? error.response.status : 500}`);
@@ -32,9 +35,16 @@ class CachingProxyServer {
     }
 
     start() {
+        this.app.get("*", (req,res) => this.handleRequest(req, res));
         this.app.listen(this.port, () => {
             console.log(`Caching proxy server is listening on port ${this.port}`);
         })
     }
+
+    clearCache() {
+        this.cache.flushAll();
+    }
 }
+
+export default CachingProxyServer;
 
