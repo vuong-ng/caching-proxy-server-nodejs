@@ -12,13 +12,13 @@ class CachingProxyServer {
     }
 
     async handleRequest(req, res) {
-        const url = `${this.origin.replace(/\/+$/, '')}/${req.orignalUrl.replace(/^\/+/, '')}`; //concat the start of this server origin with the url
+        const url = `${this.origin.replace(/\/+$/, '')}/${req.originalUrl.replace(/^\/+/, '')}`; //concat the start of this server origin with the url
         console.log(`Forwarding request to: ${url}`);
         const cachedResponse = this.cache.get(url);
 
         if (cachedResponse) {
             res.setHeader('X-cache', 'HIT');
-            return res.status('200').send(cachedResponse.data);
+            return res.status(200).send(cachedResponse.data);
         }
 
         try {

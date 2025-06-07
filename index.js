@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import yargs from 'yargs';
 import CachingProxyServer from './server.js';
 import { hideBin } from 'yargs/helpers';
